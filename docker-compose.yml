@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  fastapi:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: fastapi
+    restart: always
+    working_dir: /app
+    environment:
+      PYTHONPATH: /app
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: db
+      DB_PORT: 3306
+      MQTT_HOST: mqtt
+      MQTT_PORT: 1883
+      MQTT_TOPICS: "sensors/data1,sensors/data2"
+      THRESHOLDS_JSON: '{"temperature":30,"humidity":80,"voltage":5,"pressure":1015,"light":800}'
+    depends_on:
+      db:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    container_name: simulator
+    restart: always
+    depends_on:
+      mqtt:
+        condition: service_started
+    environment:
+      MQTT_HOST: mqtt
+      MQTT_PORT: 1883
+      SIM_TOPICS: "sensors/data1,sensors/data2"
+    volumes:
+      - ./simulate_mqtt.py:/simulator/simulate_mqtt.py
+    command: ["python", "/simulator/simulate_mqtt.py"]
+
+volumes:
+  db_data:
+  mosquitto_data:
