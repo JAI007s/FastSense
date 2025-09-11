@@ -1,5 +1,8 @@
 # Real-Time Sensor Data Processing with FastAPI, MQTT, and MySQL
 
+## 🎥 Demo Video
+You can watch or download the backend demo video from the [GitHub Release](https://github.com/your-username/real_time_backend/releases/download/v1.0/backend_demo.mp4).
+
 ## 📌 Project Overview
 This project is a **FastAPI-based service** that continuously listens to multiple MQTT topics, ingests sensor data in real-time, and stores it into a **MySQL database**.  
 It also checks incoming values against predefined **threshold conditions**, and whenever a threshold is breached, an **alert** is generated and stored in a separate table.
@@ -77,3 +80,4 @@ This project was developed as part of an **assessment task**.
 ```bash
 git clone https://github.com/your-username/real_time_backend.git
 cd real_time_backend
+
